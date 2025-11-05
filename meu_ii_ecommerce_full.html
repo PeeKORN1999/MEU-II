@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MEU-II Marketplace (meu-ii)</title>
+  <style>
+    :root{
+      --bg:#ffffff; --fg:#000000; --accent:#000;
+    }
+    html,body{height:100%;margin:0;font-family:Inter, Roboto, system-ui, "TH Sarabun New", sans-serif;background:var(--bg);color:var(--fg)}
+    header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #eee;position:sticky;top:0;background:rgba(255,255,255,0.9);backdrop-filter:blur(6px);z-index:50}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand img.logo{width:110px;height:50px;object-fit:contain}
+    nav .menu{display:flex;gap:10px;align-items:center}
+    .menu button{background:none;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .lang-switch{position:relative}
+    .lang-layer{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid #ddd;padding:6px;border-radius:8px;display:none;box-shadow:0 8px 20px rgba(0,0,0,0.08)}
+    .lang-layer button{display:flex;align-items:center;gap:8px;padding:6px;border-radius:6px;border:none;background:none;cursor:pointer}
+    main{padding:18px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .card{border:1px solid #eee;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9))}
+    .card img{width:100%;height:160px;object-fit:cover;border-radius:8px}
+    .price{font-weight:700}
+    .topbar-right{display:flex;gap:12px;align-items:center}
+    .icon-btn{background:#000;color:#fff;border:none;padding:8px;border-radius:50%;width:38px;height:38px;display:inline-grid;place-items:center;cursor:pointer}
+    .floating{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:10px}
+    .float-btn{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.15);cursor:pointer}
+    .mini-sticker{position:fixed;left:20px;bottom:120px;width:80px;height:80px;border-radius:18px;display:grid;place-items:center;font-weight:700;cursor:pointer;z-index:40}
+    .sticker-sprite{position:fixed;z-index:30;pointer-events:auto}
+    .search-input{border:1px solid #ddd;padding:8px 12px;border-radius:999px;width:220px}
+    footer{padding:20px;border-top:1px solid #eee;text-align:center;margin-top:40px}
+    .admin-panel{position:fixed;right:0;top:0;height:100%;width:420px;background:#fff;border-left:1px solid #ddd;transform:translateX(100%);transition:transform .25s;z-index:80;overflow:auto;padding:12px}
+    .admin-panel.open{transform:translateX(0)}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;place-items:center;z-index:90}
+    .modal.open{display:grid}
+    .card-actions{display:flex;gap:8px;margin-top:8px}
+    .tag{display:inline-block;padding:4px 8px;border-radius:8px;border:1px dashed #bbb;margin-right:6px}
+    .ticker{white-space:nowrap;overflow:hidden}
+    .ticker span{display:inline-block;padding-left:100%;animation:marquee 12s linear infinite}
+    @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+    .video-bg{position:fixed;inset:0;z-index:-1;object-fit:cover;width:100%;height:100%;opacity:.12}
+    .badge{background:var(--accent);color:#fff;padding:4px 8px;border-radius:8px;font-size:12px}
+    /* responsive */
+    @media(max-width:800px){.search-input{width:120px}.brand img.logo{width:90px}}
+  </style>
+</head>
+<body>
+  <!-- Background video placeholder -->
+  <video id="bgVideo" class="video-bg" autoplay muted loop style="display:none"></video>
+
+  <header>
+    <div class="brand">
+      <img id="siteLogo" class="logo" src="/assets/logo.png" alt="MEU-II Logo">
+      <div>
+        <div style="font-weight:800">MEU-II</div>
+        <div style="font-size:12px;color:#666">meu-ii (link: /meu-ii)</div>
+      </div>
+    </div>
+
+    <div class="menu">
+      <div class="ticker" style="max-width:320px"><span id="announcementText">ยินดีต้อนรับสู่ MEU-II - โปรโมชันวันนี้! ส่วนลดพิเศษสำหรับสมาชิกพรีเมี่ยม</span></div>
+      <button onclick="openPage('home')">หน้าแรก</button>
+      <button onclick="openPage('about')">เกี่ยวกับ</button>
+      <button onclick="openPage('contact')">ติดต่อเรา</button>
+      <button onclick="openPage('events')">กิจกรรม</button>
+      <button onclick="openPage('notice')">ประกาศ</button>
+      <button onclick="openPage('account')">บัญชีของฉัน</button>
+    </div>
+
+    <div class="topbar-right">
+      <input id="search" class="search-input" placeholder="ค้นหา: สินค้า, หมวด, ราคา" />
+      <div class="lang-switch">
+        <button id="langBtn" class="icon-btn">🌐</button>
+        <div id="langLayer" class="lang-layer">
+          <button data-lang="th">🇹🇭 ไทย</button>
+          <button data-lang="en">🇬🇧 English</button>
+          <button data-lang="zh">🇨🇳 中文</button>
+        </div>
+      </div>
+      <button id="cartBtn" class="icon-btn">🛒<span id="cartCount" style="font-size:11px;margin-left:6px">0</span></button>
+      <button id="loginBtn" class="icon-btn">👤</button>
+    </div>
+  </header>
+
+  <!-- Admin panel (right) -->
+  <aside id="adminPanel" class="admin-panel" aria-hidden>
+    <h3>หลังบ้าน (Admin)</h3>
+    <div style="margin-bottom:8px">ล็อกอินด้วยรหัสผ่านผู้ดูแล (ทดลอง): <input id="adminPass" type="password"><button id="adminLogin">เข้าสู่ระบบ</button></div>
+    <div id="adminArea" style="display:none">
+      <h4>จัดการสินค้า</h4>
+      <div>
+        <input id="pName" placeholder="ชื่อสินค้า"/><br/>
+        <input id="pPrice" placeholder="ราคา" type="number"/><br/>
+        <input id="pCategory" placeholder="หมวด"/><br/>
+        <input id="pImage" type="file" accept="image/*"/><br/>
+        <button id="addProduct">เพิ่มสินค้า</button>
+      </div>
+      <h4>คูปอง</h4>
+      <div>
+        <input id="couponCode" placeholder="CODE"/><input id="couponPercent" placeholder="ส่วนลด %" type="number"/><button id="addCoupon">เพิ่มคูปอง</button>
+      </div>
+      <h4>ตั้งค่าโลโก้</h4>
+      <input id="logoUpload" type="file" accept="image/*"/><br/>
+      <h4>ข้อมูลร้าน</h4>
+      <textarea id="shopSettings" rows="4" style="width:100%"></textarea>
+      <h4>รายงาน/สถิติ (ตัวอย่าง)</h4>
+      <div id="stats"></div>
+    </div>
+  </aside>
+
+  <div id="modal" class="modal"><div style="background:#fff;padding:18px;border-radius:10px;min-width:320px;max-width:92vw" id="modalContent"></div></div>
+
+  <main id="app">
+    <section id="home" class="page">
+      <h2>สินค้า</h2>
+      <div style="margin-bottom:12px">
+        <select id="sortSelect"><option value="new">ใหม่ล่าสุด</option><option value="priceAsc">ราคาต่ำ → สูง</option><option value="priceDesc">ราคาสูง → ต่ำ</option></select>
+        <button onclick="openAdmin()">เปิดหลังบ้าน</button>
+      </div>
+      <div id="productGrid" class="grid"></div>
+    </section>
+
+    <section id="about" class="page" style="display:none">
+      <h2>เกี่ยวกับ</h2>
+      <p>MEU-II เป็นแพลตฟอร์มตัวอย่าง จำลองระบบขายของครบถ้วน</p>
+    </section>
+
+    <section id="contact" class="page" style="display:none">
+      <h2>ติดต่อเรา</h2>
+      <p>ที่อยู่: <span id="addressText">ยังไม่ได้กำหนด</span></p>
+    </section>
+
+    <section id="events" class="page" style="display:none">
+      <h2>กิจกรรม</h2>
+    </section>
+
+    <section id="notice" class="page" style="display:none">
+      <h2>ประกาศ</h2>
+    </section>
+
+    <section id="account" class="page" style="display:none">
+      <h2>บัญชีของฉัน</h2>
+      <div id="authArea">
+        <button id="regGoogle">ลงทะเบียนด้วย Google (ตัวอย่าง)</button>
+        <div style="margin-top:8px">หรือ ลงทะเบียนด้วยเบอร์โทร</div>
+        <input id="regPhone" placeholder="เบอร์โทร"/><button id="regPhoneBtn">ลงทะเบียน</button>
+      </div>
+      <div id="accountInfo" style="display:none">
+        <p>สวัสดี, <span id="accName"></span></p>
+        <div>ที่อยู่: <button id="addAddress">เพิ่ม/แก้ไขที่อยู่</button></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="floating">
+    <div class="float-btn" id="serviceBtn" title="ติดต่อฝ่ายบริการ">💬</div>
+    <div class="float-btn" id="codeBtn" title="รับโค้ด">🎟️</div>
+  </div>
+
+  <div class="mini-sticker" id="sticker" style="background:linear-gradient(45deg,#ffb347,#ffcc33);">
+    <img src="/assets/logo.png" style="width:56px;height:56px;object-fit:contain;pointer-events:none" alt="MEU-II">
+  </div>
+
+  <footer>
+    <div>© <span id="year"></span> MEU-II. สงวนลิขสิทธิ์</div>
+    <div style="margin-top:6px">เวลาไทย: <span id="thaiTime"></span> <span id="tzFlag"></span></div>
+  </footer>
+
+  <script>
+    // Basic data storage (localStorage) to simulate backend
+    const STORAGE_PRODUCTS = 'meu_products_v1';
+    const STORAGE_CART = 'meu_cart_v1';
+    const STORAGE_COUPONS = 'meu_coupons_v1';
+    const STORAGE_USERS = 'meu_users_v1';
+
+    // demo initial products
+    const demoProducts = [
+      {id:1,name:{th:'รองเท้าวิ่ง',en:'Running Shoes',zh:'跑步鞋'},price:1290,category:'รองเท้า',img:'https://picsum.photos/400?random=11'},
+      {id:2,name:{th:'เสื้อยืด',en:'T-Shirt',zh:'T恤'},price:299,category:'เสื้อ',img:'https://picsum.photos/400?random=12'},
+      {id:3,name:{th:'หูฟัง',en:'Headphones',zh:'耳机'},price:1590,category:'อุปกรณ์',img:'https://picsum.photos/400?random=13'},
+    ];
+
+    // init
+    function init(){
+      if(!localStorage.getItem(STORAGE_PRODUCTS)) localStorage.setItem(STORAGE_PRODUCTS,JSON.stringify(demoProducts));
+      if(!localStorage.getItem(STORAGE_COUPONS)) localStorage.setItem(STORAGE_COUPONS,JSON.stringify([]));
+      renderProducts();
+      document.getElementById('year').textContent = new Date().toLocaleString('th-TH',{year:'numeric'});
+      updateThaiTime(); setInterval(updateThaiTime,1000);
+      // lang switcher
+      const langBtn = document.getElementById('langBtn'); const langLayer=document.getElementById('langLayer');
+      langBtn.addEventListener('click',()=>{langLayer.style.display = langLayer.style.display==='block'?'none':'block'})
+      langLayer.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{setLang(b.dataset.lang);langLayer.style.display='none'}))
+      // cart
+      document.getElementById('cartBtn').addEventListener('click',openCart);
+      loadCartCount();
+      // sticker behaviour
+      const sticker = document.getElementById('sticker'); sticker.addEventListener('click',()=>{window.open('https://line.me/ti/p/~@727kpgao','_blank')});
+      // service floating
+      document.getElementById('serviceBtn').addEventListener('click',()=>{window.open('https://line.me/ti/p/~@727kpgao','_blank')});
+      document.getElementById('codeBtn').addEventListener('click',()=>{alert('รับโค้ดทดลอง: WELCOME10')});
+      // admin login
+      document.getElementById('adminLogin').addEventListener('click',()=>{if(document.getElementById('adminPass').value==='admin123'){document.getElementById('adminArea').style.display='block';saveStats();renderProducts();alert('เข้าสู่ระบบหลังบ้านเรียบร้อย')}})
+      document.getElementById('addProduct').addEventListener('click',handleAddProduct);
+      document.getElementById('logoUpload').addEventListener('change',handleLogoUpload);
+      document.getElementById('pImage').addEventListener('change',handleNewProductImage);
+      document.getElementById('addCoupon').addEventListener('click',addCoupon);
+      document.getElementById('regPhoneBtn').addEventListener('click',registerPhone);
+      document.getElementById('loginBtn').addEventListener('click',()=>{openPage('account')});
+      document.getElementById('search').addEventListener('keyup',searchNow);
+      document.getElementById('sortSelect').addEventListener('change',renderProducts);
+      // admin open
+      document.getElementById('adminPass').addEventListener('keyup',(e)=>{if(e.key==='Enter')document.getElementById('adminLogin').click()});
+      // open admin panel by button
+      window.openAdmin = openAdmin;
+      // load site settings
+      const settings = localStorage.getItem('meu_settings'); if(settings){document.getElementById('addressText').textContent = JSON.parse(settings).address||'ยังไม่ได้กำหนด'}
+      // stickers animation
+      animateSticker();
+      // load logo
+      const logoData = localStorage.getItem('meu_logo'); if(logoData) document.getElementById('siteLogo').src = logoData;
+    }
+
+    function saveStats(){
+      const statsEl = document.getElementById('stats');
+      const products = JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)||'[]');
+      const cart = JSON.parse(localStorage.getItem(STORAGE_CART)||'[]');
+      statsEl.innerHTML = `<div>จำนวนสินค้า: ${products.length}</div><div>จำนวนรายการในตะกร้า: ${cart.length}</div>`;
+    }
+
+    function renderProducts(){
+      const grid = document.getElementById('productGrid'); grid.innerHTML='';
+      let products = JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)||'[]');
+      const sort = document.getElementById('sortSelect').value;
+      if(sort==='priceAsc') products.sort((a,b)=>a.price-b.price);
+      if(sort==='priceDesc') products.sort((a,b)=>b.price-a.price);
+      products.forEach(p=>{
+        const div = document.createElement('div'); div.className='card';
+        div.innerHTML = `<img src="${p.img}" alt="${p.name?.th||p.name}"><h3>\${p.name?.th||p.name}</h3><div class='price'>฿\${p.price}</div><div class='card-actions'><button onclick='addToCart(${p.id})'>ใส่ตะกร้า</button><button onclick='openProduct(${p.id})'>ดูสินค้า</button></div>`;
+        grid.appendChild(div);
+      })
+      saveStats();
+    }
+
+    function openProduct(id){
+      const products = JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)||'[]'); const p = products.find(x=>x.id===id);
+      if(!p) return alert('ไม่พบสินค้า');
+      document.getElementById('modalContent').innerHTML = `<h3>\${p.name?.th||p.name}</h3><img src='\${p.img}' style='width:100%;height:240px;object-fit:cover;border-radius:8px'><p>ราคา: ฿\${p.price}</p><p>หมวด: \${p.category}</p><div><button onclick='addToCart(\${p.id});closeModal()'>เพิ่มลงตะกร้า</button> <button onclick='closeModal()'>ปิด</button></div>`;
+      openModal();
+    }
+
+    function openModal(){document.getElementById('modal').classList.add('open')}
+    function closeModal(){document.getElementById('modal').classList.remove('open')}
+    document.getElementById('modal').addEventListener('click',(e)=>{if(e.target.id==='modal')closeModal()});
+
+    function addToCart(id){
+      const cart = JSON.parse(localStorage.getItem(STORAGE_CART)||'[]');
+      cart.push({id,qty:1}); localStorage.setItem(STORAGE_CART,JSON.stringify(cart)); loadCartCount(); alert('เพิ่มลงตะกร้าแล้ว');
+    }
+    function loadCartCount(){const c = JSON.parse(localStorage.getItem(STORAGE_CART)||'[]'); document.getElementById('cartCount').textContent = c.length}
+
+    function openCart(){
+      const cart = JSON.parse(localStorage.getItem(STORAGE_CART)||'[]');
+      const products = JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)||'[]');
+      let html = '<h3>ตะกร้าสินค้า</h3>';
+      if(cart.length===0) html += '<p>ตะกร้าว่าง</p>'
+      else{
+        let total=0; html += '<ul>';
+        cart.forEach((c,i)=>{const p = products.find(x=>x.id===c.id); if(p){total+=p.price*c.qty; html+=`<li>\${p.name?.th||p.name} x\${c.qty} - ฿\${p.price*c.qty} <button onclick="removeCart(\${i})">ลบ</button></li>`}});
+        html += `</ul><div>รวม: ฿\${total}</div><div style='margin-top:8px'><button onclick='checkout()'>ชำระเงิน</button></div>`;
+      }
+      document.getElementById('modalContent').innerHTML = html; openModal();
+    }
+    function removeCart(index){const cart=JSON.parse(localStorage.getItem(STORAGE_CART)||'[]');cart.splice(index,1);localStorage.setItem(STORAGE_CART,JSON.stringify(cart));openCart();loadCartCount()}
+
+    function checkout(){
+      // Simulate payment options modal
+      document.getElementById('modalContent').innerHTML = `<h3>ชำระเงิน</h3><p>เลือกช่องทางการชำระ (ตัวอย่าง)</p><button onclick='payBank()'>โอนธนาคาร</button> <button onclick='payQR()'>สแกน QR (พร้อมเพย์)</button> <button onclick='closeModal()'>ยกเลิก</button>`;
+      openModal();
+    }
+    function payBank(){document.getElementById('modalContent').innerHTML = `<h3>โอนเงินเข้าบัญชี</h3><p>ธนาคาร: ธนาคารตัวอย่าง</p><p>เลขบัญชี: 0123456789</p><p>จำนวนเงิน: ...</p><div><button onclick='confirmPaid()'>แจ้งชำระ</button></div>`}
+    function payQR(){document.getElementById('modalContent').innerHTML = `<h3>สแกน QR พร้อมเพย์</h3><p><img src='https://dummyimage.com/300x300/eee/000&text=QR+Placeholder'></p><div><button onclick='confirmPaid()'>แจ้งชำระ</button></div>`}
+    function confirmPaid(){alert('ขอบคุณ ระบบจะตรวจสอบการชำระและอัปเดตออร์เดอร์ (ตัวอย่าง)'); localStorage.setItem(STORAGE_CART,JSON.stringify([])); loadCartCount(); closeModal();}
+
+    // Admin product add with image to base64
+    let newProductImageData='';
+    function handleNewProductImage(e){const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=function(){newProductImageData=r.result}; r.readAsDataURL(f)}
+    function handleAddProduct(){const name=document.getElementById('pName').value; const price=Number(document.getElementById('pPrice').value); const cat=document.getElementById('pCategory').value; if(!name||!price) return alert('กรอกให้ครบ'); let products=JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)||'[]'); const id=Date.now(); products.push({id,name:{th:name,en:name,zh:name},price,category:cat,img:newProductImageData||'https://picsum.photos/400?random='+Math.floor(Math.random()*1000)}); localStorage.setItem(STORAGE_PRODUCTS,JSON.stringify(products)); renderProducts(); alert('เพิ่มสินค้าแล้ว')}
+
+    // Logo upload
+    function handleLogoUpload(e){const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=function(){localStorage.setItem('meu_logo',r.result); document.getElementById('siteLogo').src=r.result; alert('เปลี่ยนโลโก้เรียบร้อย')}; r.readAsDataURL(f)}
+
+    // Coupons
+    function addCoupon(){const code=document.getElementById('couponCode').value; const pct=Number(document.getElementById('couponPercent').value); if(!code) return alert('ใส่โค้ด'); let coupons=JSON.parse(localStorage.getItem(STORAGE_COUPONS)||'[]'); coupons.push({code,percent:pct}); localStorage.setItem(STORAGE_COUPONS,JSON.stringify(coupons)); alert('เพิ่มคูปองแล้ว')}
+
+    // Registration (phone) local only; enforces one phone, one email per localStorage
+    function registerPhone(){const phone=document.getElementById('regPhone').value.trim(); if(!phone) return alert('กรอกเบอร์'); let users=JSON.parse(localStorage.getItem(STORAGE_USERS)||'[]'); if(users.find(u=>u.phone===phone)) return alert('เบอร์นี้ลงทะเบียนแล้ว'); users.push({id:Date.now(),phone}); localStorage.setItem(STORAGE_USERS,JSON.stringify(users)); alert('ลงทะเบียนเรียบร้อย'); document.getElementById('accName').textContent=phone; document.getElementById('accountInfo').style.display='block';}
+
+    // Language switch and auto currency/labels
+    let LANG = localStorage.getItem('meu_lang')||'th';
+    function setLang(l){LANG=l; localStorage.setItem('meu_lang',l); applyLang();}
+    function applyLang(){ // Minimal translations for demo
+      const map = {
+        th:{cart:'ตะกร้า',account:'บัญชีของฉัน'},
+        en:{cart:'Cart',account:'My Account'},
+        zh:{cart:'购物车',account:'我的账户'}
+      };
+      document.getElementById('cartBtn').title = map[LANG].cart || 'Cart';
+    }
+
+    // page router
+    function openPage(id){document.querySelectorAll('.page').forEach(p=>p.style.display='none');document.getElementById(id).style.display='block'}
+
+    // small functions
+    function updateThaiTime(){ const now = new Date(); document.getElementById('thaiTime').textContent = now.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); document.getElementById('tzFlag').textContent='🇹🇭'}
+
+    function openAdmin(){document.getElementById('adminPanel').classList.toggle('open')}
+
+    // search
+    function searchNow(e){const q=e.target.value.trim().toLowerCase(); const products=JSON.parse(localStorage.getItem(STORAGE_PRODUCTS)||'[]'); const results=products.filter(p=> (p.name?.th||p.name).toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || String(p.price).includes(q)); const grid=document.getElementById('productGrid'); grid.innerHTML=''; results.forEach(p=>{const d=document.createElement('div');d.className='card';d.innerHTML=`<img src="${p.img}"><h3>${p.name?.th||p.name}</h3><div class='price'>฿${p.price}</div><div class='card-actions'><button onclick='addToCart(${p.id})'>ใส่ตะกร้า</button><button onclick='openProduct(${p.id})'>ดูสินค้า</button></div>`;grid.appendChild(d)})}
+
+    // sticker animation
+    function animateSticker(){const s=document.getElementById('sticker'); let dir=1; let x=20,y=120, vx=1+Math.random()*2; setInterval(()=>{x+=vx*dir; if(x>window.innerWidth-120||x<10) dir*=-1; s.style.left = x+'px'; s.style.bottom = (100+20*Math.sin(Date.now()/400))+'px'},40)}
+
+    // page init
+    init();
+
+    // Note: Many features below require server-side/backend & third-party APIs to be secure & reliable:
+    // - Real payment gateway integrations for Thai banks & PromptPay (use providers like Omise, 2C2P, SCB Pay, PayNow etc.)
+    // - Shipping API aggregation (Kerry, J&T, Flash, Thailand Post) require server keys & webhooks
+    // - Real Google OAuth needs backend & client id / secret
+    // - IP detection & fraud prevention requires server logging
+    // - Multi-store marketplace logic (role-based accounts, payouts) requires DB and scheduled jobs
+    // This single-file demo simulates UI, local persistence (localStorage) and admin editing. To make this production-ready, you will need a backend (Node/Express, PHP, Python/Django, or similar), a database (MySQL/Postgres/Mongo), and payment + shipping provider integrations.
+
+  </script>
+</body>
+</html>
